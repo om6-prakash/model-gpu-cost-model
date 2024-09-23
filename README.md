@@ -41,15 +41,16 @@ By modifying these variables, you can easily estimate the performance characteri
 | Llama-3-8B      | H100 PCIe       | 131072.0          | 0.011 ms       | 8.000 ms          | 2.1 s                     |
 | Llama-3-8B      | H100 SXM        | 131072.0          | 0.008 ms       | 4.776 ms          | 1.3 s                     |
 | Llama-3-8B      | H100 NVL        | 352256.0          | 0.004 ms       | 2.051 ms          | 0.5 s                     |
-| Llama-3-70B     | A10             | NA                | 1.120 ms       | 233.333 ms        | 64.3 s                    |
-| Llama-3-70B     | A30             | NA                | 0.424 ms       | 150.054 ms        | 40.2 s                    |
-| Llama-3-70B     | L40             | NA                | 0.773 ms       | 162.037 ms        | 44.6 s                    |
-| Llama-3-70B     | L40s            | NA                | 0.387 ms       | 162.037 ms        | 43.1 s                    |
-| Llama-3-70B     | A100 40 GB      | NA                | 0.449 ms       | 90.032 ms         | 24.9 s                    |
-| Llama-3-70B     | A100 40 GB SXM  | NA                | 0.449 ms       | 90.032 ms         | 24.9 s                    |
-| Llama-3-70B     | A100 80 GB PCIe | NA                | 0.449 ms       | 72.351 ms         | 20.4 s                    |
-| Llama-3-70B     | A100 80 GB SXM  | NA                | 0.449 ms       | 68.661 ms         | 19.4 s                    |
-| Llama-3-70B     | H100 PCIe       | NA                | 0.093 ms       | 70.000 ms         | 18.3 s                    |
-| Llama-3-70B     | H100 SXM        | NA                | 0.071 ms       | 41.791 ms         | 11.0 s                    |
+| Llama-3-70B     | A10             | OOM               | 1.120 ms       | 233.333 ms        | 64.3 s                    |
+| Llama-3-70B     | A30             | OOM               | 0.424 ms       | 150.054 ms        | 40.2 s                    |
+| Llama-3-70B     | L40             | OOM               | 0.773 ms       | 162.037 ms        | 44.6 s                    |
+| Llama-3-70B     | L40s            | OOM               | 0.387 ms       | 162.037 ms        | 43.1 s                    |
+| Llama-3-70B     | A100 40 GB      | OOM               | 0.449 ms       | 90.032 ms         | 24.9 s                    |
+| Llama-3-70B     | A100 40 GB SXM  | OOM               | 0.449 ms       | 90.032 ms         | 24.9 s                    |
+| Llama-3-70B     | A100 80 GB PCIe | OOM               | 0.449 ms       | 72.351 ms         | 20.4 s                    |
+| Llama-3-70B     | A100 80 GB SXM  | OOM               | 0.449 ms       | 68.661 ms         | 19.4 s                    |
+| Llama-3-70B     | H100 PCIe       | OOM               | 0.093 ms       | 70.000 ms         | 18.3 s                    |
+| Llama-3-70B     | H100 SXM        | OOM               | 0.071 ms       | 41.791 ms         | 11.0 s                    |
 | Llama-3-70B     | H100 NVL        | 19660.8           | 0.035 ms       | 17.949 ms         | 4.7 s                     |
+
 ```
