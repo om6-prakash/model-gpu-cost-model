@@ -2,16 +2,17 @@
 A calculator to estimate the memory footprint, capacity, and latency based on your planned LLM application's requirements or your existing infrastructure.
 
 # Usage
-- num_gpu ('-g', '--num_gpu'): Specify the number of GPUs you plan to use for your deployment.
-- prompt_size ('-p', '--prompt_sz'): Define the average size of the input prompts you expect to process.
-- response_size ('-r', '--response_sz'): Set the average size of the responses you expect to generate.
-- n_concurrent_request ('-c', '--n_concurrent_req'): Indicate the number of concurrent requests you anticipate handling.
-- avg_context_window ('-w', '-cw', '--ctx_window'): Specify the average context window size for your use case.
+Here are the Flags and their abbreviations for the script
+- num_gpu ('-g'): Specify the number of GPUs you plan to use for your deployment.
+- prompt_sz ('-p'): Define the average size of the input prompts you expect to process.
+- response_sz ('-r'): Set the average size of the responses you expect to generate.
+- n_concurrent_req ('-c'): Indicate the number of concurrent requests you anticipate handling.
+- ctx_window ('-w', '-cw'): Specify the **_average_** context window size for your use case.
 By modifying these variables, you can easily estimate the performance characteristics of your LLM deployment and make informed decisions about your infrastructure requirements.
 
 # Sample output
 ```bash
-python LLM_size_pef_calculator.py -g 1 -p 4096 -r 256 -c 10 -w 1024
+$ python LLM_size_pef_calculator.py --num_gpu 1 --prompt_sz 4096 --response_sz 256 --n_concurrent_req 10 --ctx_window 1024
  num_gpu = 1, prompt_size = 4096 tokens, response_size = 256 tokens
  n_concurrent_request = 10, avg_context_window = 1024 tokens
 
