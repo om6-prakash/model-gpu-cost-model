@@ -59,9 +59,10 @@ def main():
     print(f"\n******************** Estimate LLM Memory Footprint ********************")
     memory_footprint_table = []
     for model_spec in model_specs:
+        kv_cache_size_per_token = calc_kv_cache_size_per_token(model_spec["n_layers"], model_spec["d_model"])
         memory_footprint = calc_memory_footprint(model_spec, n_concurrent_request, avg_context_window)
-        memory_footprint_table.append([model_spec['name'], f"{memory_footprint:.2f} GB"])
-    print(tabulate(memory_footprint_table, headers=['Model', 'Memory Footprint'], tablefmt='orgtbl'))
+        memory_footprint_table.append([model_spec['name'], f"{kv_cache_size_per_token:.6f} GiB/token", f"{memory_footprint:.2f} GB"])
+    print(tabulate(memory_footprint_table, headers=['Model', 'KV Cache Size per Token', 'Memory Footprint'], tablefmt='orgtbl'))
 
     def calc_kv_cache_tokens(num_gpu, gpu_memory_gb, model_params_billion, kv_cache_size):
         result = (num_gpu * gpu_memory_gb - 2 * model_params_billion) / kv_cache_size
