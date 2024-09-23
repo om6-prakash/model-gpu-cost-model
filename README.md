@@ -12,7 +12,7 @@ By modifying these variables, you can easily estimate the performance characteri
 
 # Sample output
 ```bash
-$ python LLM_size_pef_calculator.py --num_gpu 1 --prompt_sz 4096 --response_sz 256 --n_concurrent_req 10 --ctx_window 1024
+$ python LLM_size_pef_calculator.py -g 1 -p 4096 -r 256 -c 10 -w 1024
  num_gpu = 1, prompt_size = 4096 tokens, response_size = 256 tokens
  n_concurrent_request = 10, avg_context_window = 1024 tokens
 
