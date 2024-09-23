@@ -1,4 +1,5 @@
 import argparse
+from tabulate import tabulate
 
 def main():
     parser = argparse.ArgumentParser(description='Your script description')
@@ -53,12 +54,14 @@ def main():
     def calc_memory_footprint(model_spec, n_concurrent_request, avg_context_window):
         kv_cache_size_per_token = calc_kv_cache_size_per_token(model_spec["n_layers"], model_spec["d_model"])
         target_gpu_mem = kv_cache_size_per_token * avg_context_window * n_concurrent_request + model_spec["params_billion"] * 2
-        print(f"Model: {model_spec['name']}, kv_cache_size_per_token: {kv_cache_size_per_token:.6f} GiB/token, Memory Footprint: {target_gpu_mem:.2f} GB")
         return target_gpu_mem
 
     print(f"\n******************** Estimate LLM Memory Footprint ********************")
+    memory_footprint_table = []
     for model_spec in model_specs:
         memory_footprint = calc_memory_footprint(model_spec, n_concurrent_request, avg_context_window)
+        memory_footprint_table.append([model_spec['name'], f"{memory_footprint:.2f} GB"])
+    print(tabulate(memory_footprint_table, headers=['Model', 'Memory Footprint'], tablefmt='orgtbl'))
 
     def calc_kv_cache_tokens(num_gpu, gpu_memory_gb, model_params_billion, kv_cache_size):
         result = (num_gpu * gpu_memory_gb - 2 * model_params_billion) / kv_cache_size
@@ -78,19 +81,17 @@ def main():
         return (prompt_size * prefill_time + response_size * generation_time) / 1000  # convert ms to seconds
 
     print(f"\n******************** Estimate LLM Capacity and Latency ******************** ")
+    capacity_latency_table = []
     for model in model_specs:
-        print(f"Model: {model['name']} ({model['params_billion']}B parameters)")
+        # print(f"Model: {model['name']} ({model['params_billion']}B parameters)")
         kv_cache_size = calc_kv_cache_size_per_token(model['n_layers'], model['d_model'])
-
         for gpu in gpu_specs:
             kv_cache_tokens = calc_kv_cache_tokens(num_gpu, gpu['memory_gb'], model['params_billion'], kv_cache_size)
-
             prefill_time_per_token = calc_prefill_time_per_token(num_gpu, model['params_billion'], gpu['fp16_tflops'])
             generation_time_per_token = calc_generation_time_per_token(num_gpu, model['params_billion'], gpu['memory_bandwidth_gbps'])
-
             estimated_response_time = calc_estimated_response_time(prefill_time_per_token, generation_time_per_token, prompt_size, response_size)
-
-            print(f"  GPU: {gpu['name']}, KV Cache Tokens: {kv_cache_tokens}, Prefill Time: {prefill_time_per_token:.3f} ms, Generation Time: {generation_time_per_token:.3f} ms, Estimated Response Time: {estimated_response_time:.1f} s")
+            capacity_latency_table.append([model['name'], gpu['name'], f"{kv_cache_tokens}", f"{prefill_time_per_token:.3f} ms", f"{generation_time_per_token:.3f} ms", f"{estimated_response_time:.1f} s"])
+    print(tabulate(capacity_latency_table, headers=['Model', 'GPU', 'KV Cache Tokens', 'Prefill Time', 'Generation Time', 'Estimated Response Time'], tablefmt='orgtbl'))
 
 if __name__ == '__main__':
     main()
