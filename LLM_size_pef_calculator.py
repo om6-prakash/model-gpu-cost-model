@@ -42,7 +42,10 @@ def main():
         {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
         {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
         {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128},
-        {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128}
+        {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
+        {"name": "Falcon-7B", "params_billion": 7, "d_model": 4544, "n_heads": 71, "n_layers": 32, "max_context_window": 2048, "d_head": 64},
+        {"name": "Falcon-40B", "params_billion": 40, "d_model": 8192, "n_heads": 128, "n_layers": 60, "max_context_window": 2048, "d_head": 64},
+        {"name": "Falcon-180B", "params_billion": 180, "d_model": 14848, "n_heads": 232, "n_layers": 80, "max_context_window": 2048, "d_head": 64}
         # Add or comment out model specifications as needed
     ]
 
@@ -66,19 +69,19 @@ def main():
 
     def calc_kv_cache_tokens(num_gpu, gpu_memory_gb, model_params_billion, kv_cache_size):
         result = (num_gpu * gpu_memory_gb - 2 * model_params_billion) / kv_cache_size
-        return result if result >= 0 else "NA"
+        return result if result >= 0 else "OOM"
 
     def calc_prefill_time_per_token(num_gpu, model_params_billion, fp16_tflops):
         result = (2 * model_params_billion / num_gpu) / fp16_tflops
-        return result if result >= 0 else "NA"
+        return result if result >= 0 else "OOM"
 
     def calc_generation_time_per_token(num_gpu, model_params_billion, memory_bandwidth_gbps):
         result = (2 * model_params_billion / num_gpu) / memory_bandwidth_gbps * 1000
-        return result if result >= 0 else "NA"
+        return result if result >= 0 else "OOM"
 
     def calc_estimated_response_time(prefill_time, generation_time, prompt_size, response_size):
         if isinstance(prefill_time, str) or isinstance(generation_time, str):  # Check if any are "NA"
-            return "NA"
+            return "OOM"
         return (prompt_size * prefill_time + response_size * generation_time) / 1000  # convert ms to seconds
 
     print(f"\n******************** Estimate LLM Capacity and Latency ******************** ")
