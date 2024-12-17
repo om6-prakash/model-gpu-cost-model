@@ -27,16 +27,16 @@ def main():
         # {"name": "A100 40 GB SXM", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
         # {"name": "A100 80 GB PCIe", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 1935},
         # {"name": "A100 80 GB SXM", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 2039},
-        {"name": "H100 PCIe", "fp16_tflops": 1513, "memory_gb": 80, "memory_bandwidth_gbps": 2000},
-        {"name": "H100 SXM", "fp16_tflops": 1979, "memory_gb": 80, "memory_bandwidth_gbps": 3350},
-        {"name": "H100 NVL", "fp16_tflops": 1671, "memory_gb": 94, "memory_bandwidth_gbps": 3900},
-        {"name": "H200 SXM", "fp16_tflops": 1979, "memory_gb": 141, "memory_bandwidth_gbps": 4800},
-        {"name": "H200 NVL", "fp16_tflops": 1671, "memory_gb": 141, "memory_bandwidth_gbps": 4800}
+        # {"name": "H100 PCIe", "fp16_tflops": 756.5, "memory_gb": 80, "memory_bandwidth_gbps": 2000},
+        # {"name": "H100 SXM", "fp16_tflops": 989.5, "memory_gb": 80, "memory_bandwidth_gbps": 3350},
+        # {"name": "H100 NVL", "fp16_tflops": 835.5, "memory_gb": 94, "memory_bandwidth_gbps": 3900},
+        {"name": "H200 SXM", "fp16_tflops": 989.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800},
+        {"name": "H200 NVL", "fp16_tflops": 835.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800}
     ]
 
     model_specs = [
         # {"name": "Llama-3-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
-        {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
+        # {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
         # {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
         {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128}
         # {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
