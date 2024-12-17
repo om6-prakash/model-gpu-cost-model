@@ -27,9 +27,9 @@ def main():
         # {"name": "A100 40 GB SXM", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
         # {"name": "A100 80 GB PCIe", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 1935},
         # {"name": "A100 80 GB SXM", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 2039},
-        # {"name": "H100 PCIe", "fp16_tflops": 756.5, "memory_gb": 80, "memory_bandwidth_gbps": 2000},
-        # {"name": "H100 SXM", "fp16_tflops": 989.5, "memory_gb": 80, "memory_bandwidth_gbps": 3350},
-        # {"name": "H100 NVL", "fp16_tflops": 835.5, "memory_gb": 94, "memory_bandwidth_gbps": 3900},
+        {"name": "H100 PCIe", "fp16_tflops": 756.5, "memory_gb": 80, "memory_bandwidth_gbps": 2000},
+        {"name": "H100 SXM", "fp16_tflops": 989.5, "memory_gb": 80, "memory_bandwidth_gbps": 3350},
+        {"name": "H100 NVL", "fp16_tflops": 835.5, "memory_gb": 94, "memory_bandwidth_gbps": 3900},
         {"name": "H200 SXM", "fp16_tflops": 989.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800},
         {"name": "H200 NVL", "fp16_tflops": 835.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800}
     ]
@@ -70,20 +70,6 @@ def main():
     def calc_e2e_latency(prefill_time_per_token, tpot, prompt_size, response_size):
         return (prompt_size * prefill_time_per_token + response_size * tpot) / 1000
 
-    for model in model_specs:
-        for gpu in gpu_specs:
-            kv_cache_size_per_token = calc_kv_cache_size_per_token(model["n_layers"], model["d_model"])
-            context_window = prompt_size + response_size
-            memory_footprint = calc_memory_footprint(model, n_concurrent_request, context_window)
-
-            available_memory = num_gpu * gpu["memory_gb"]
-            if memory_footprint > available_memory:
-                print(f"\n!!!! Warning {model['name']}: OOM for your input={prompt_size} and output={response_size} for {num_gpu}x {gpu['name']}")
-                kv_cache_tokens = calc_kv_cache_tokens(num_gpu, gpu["memory_gb"], model["params_billion"], kv_cache_size_per_token)
-                max_n_concurrent_req = int(kv_cache_tokens // context_window)
-                print(f"Max number of concurrent requests that can be set for this use case: {max_n_concurrent_req}, ignore the rows in the second table which contains {gpu['name']}")
-                # exit(1)
-
     print(f"\n******************** Estimate LLM Memory Footprint ********************")
     memory_footprint_table = []
     for model_spec in model_specs:
@@ -92,6 +78,21 @@ def main():
         memory_footprint = calc_memory_footprint(model_spec, n_concurrent_request, context_window)
         memory_footprint_table.append([model_spec['name'], f"{kv_cache_size_per_token:.6f} GiB/token", f"{memory_footprint:.2f} GB"])
     print(tabulate(memory_footprint_table, headers=['Model', 'KV Cache Size per Token', 'Memory Footprint'], tablefmt='orgtbl'))
+
+
+    for model in model_specs:
+        for gpu in gpu_specs:
+            kv_cache_size_per_token = calc_kv_cache_size_per_token(model["n_layers"], model["d_model"])
+            context_window = prompt_size + response_size
+            memory_footprint = calc_memory_footprint(model, n_concurrent_request, context_window)
+
+            available_memory = num_gpu * gpu["memory_gb"]
+            if memory_footprint > available_memory:
+                print(f"\n!!!! Warning {model['name']}: n_concurrent_request={n_concurrent_request} is TOO Large!!!\nCausing OOM with ISL={prompt_size} and OSL={response_size} using {num_gpu}x {gpu['name']}")
+                kv_cache_tokens = calc_kv_cache_tokens(num_gpu, gpu["memory_gb"], model["params_billion"], kv_cache_size_per_token)
+                max_n_concurrent_req = int(kv_cache_tokens // context_window)
+                print(f"Max number of concurrent requests that can be set for this use case: {max_n_concurrent_req}\nIgnore the rows in the following table which contains {gpu['name']} and rerun the calculator with this number")
+                # exit(1)
 
     print(f"\n******************** Estimate LLM Capacity and Latency ******************** ")
     capacity_latency_table = []
