@@ -7,7 +7,6 @@ def main():
     parser.add_argument('-p', '--prompt_sz', type=int, default=4096, help='Prompt size in tokens')
     parser.add_argument('-r', '--response_sz', type=int, default=256, help='Response size in tokens')
     parser.add_argument('-c', '--n_concurrent_req', type=int, default=10, help='Number of concurrent requests')
-    parser.add_argument('-w', '-cw', '--ctx_window', type=int, default=1024, help='Average context window')
 
     args = parser.parse_args()
 
@@ -15,13 +14,10 @@ def main():
     prompt_size = args.prompt_sz
     response_size = args.response_sz
     n_concurrent_request = args.n_concurrent_req
-    avg_context_window = args.ctx_window
 
-    # Print input
     print(f" num_gpu = {num_gpu}, prompt_size = {prompt_size} tokens, response_size = {response_size} tokens")
-    print(f" n_concurrent_request = {n_concurrent_request}, avg_context_window = {avg_context_window} tokens")
+    print(f" n_concurrent_request = {n_concurrent_request}")
 
-    # Define variables
     gpu_specs = [
         {"name": "A10", "fp16_tflops": 125, "memory_gb": 24, "memory_bandwidth_gbps": 600},
         {"name": "A30", "fp16_tflops": 330, "memory_gb": 24, "memory_bandwidth_gbps": 933},
@@ -31,71 +27,92 @@ def main():
         {"name": "A100 40 GB SXM", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
         {"name": "A100 80 GB PCIe", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 1935},
         {"name": "A100 80 GB SXM", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 2039},
-        {"name": "H100 PCIe", "fp16_tflops": 1513, "memory_gb": 80, "memory_bandwidth_gbps": 2000},
-        {"name": "H100 SXM", "fp16_tflops": 1979, "memory_gb": 80, "memory_bandwidth_gbps": 3350},
-        {"name": "H100 NVL", "fp16_tflops": 3958, "memory_gb": 188, "memory_bandwidth_gbps": 7800}
-        # Add or comment out GPU types as needed
+        {"name": "H100 NVL", "fp16_tflops": 1671, "memory_gb": 94, "memory_bandwidth_gbps": 3900},
+        {"name": "H200 SXM", "fp16_tflops": 1979, "memory_gb": 141, "memory_bandwidth_gbps": 4800},
+        {"name": "H200 NVL", "fp16_tflops": 1671, "memory_gb": 141, "memory_bandwidth_gbps": 4800}
     ]
 
     model_specs = [
         {"name": "Llama-3-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
-        {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
-        {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
-        {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128},
-        {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
-        {"name": "Falcon-7B", "params_billion": 7, "d_model": 4544, "n_heads": 71, "n_layers": 32, "max_context_window": 2048, "d_head": 64},
-        {"name": "Falcon-40B", "params_billion": 40, "d_model": 8192, "n_heads": 128, "n_layers": 60, "max_context_window": 2048, "d_head": 64},
-        {"name": "Falcon-180B", "params_billion": 180, "d_model": 14848, "n_heads": 232, "n_layers": 80, "max_context_window": 2048, "d_head": 64}
+        {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128}
+        # {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
+        # {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128}
+        # {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
+        # {"name": "Falcon-7B", "params_billion": 7, "d_model": 4544, "n_heads": 71, "n_layers": 32, "max_context_window": 2048, "d_head": 64},
+        # {"name": "Falcon-40B", "params_billion": 40, "d_model": 8192, "n_heads": 128, "n_layers": 60, "max_context_window": 2048, "d_head": 64},
+        # {"name": "Falcon-180B", "params_billion": 180, "d_model": 14848, "n_heads": 232, "n_layers": 80, "max_context_window": 2048, "d_head": 64}
         # Add or comment out model specifications as needed
     ]
 
-    BYTES_IN_GB = 1_073_741_824  # 1 GB = 1,073,741,824 bytes
+    BYTES_IN_GB = 1_073_741_824
 
     def calc_kv_cache_size_per_token(n_layers, d_model):
-        return 2 * 2 * n_layers * d_model / BYTES_IN_GB  # GB/token
+        return 2 * 2 * n_layers * d_model / BYTES_IN_GB
 
-    def calc_memory_footprint(model_spec, n_concurrent_request, avg_context_window):
+    def calc_memory_footprint(model_spec, n_concurrent_request, context_window):
         kv_cache_size_per_token = calc_kv_cache_size_per_token(model_spec["n_layers"], model_spec["d_model"])
-        target_gpu_mem = kv_cache_size_per_token * avg_context_window * n_concurrent_request + model_spec["params_billion"] * 2
-        return target_gpu_mem
+        return kv_cache_size_per_token * context_window * n_concurrent_request + model_spec["params_billion"] * 2
+
+    def calc_kv_cache_tokens(num_gpu, gpu_memory_gb, model_params_billion, kv_cache_size):
+        result = (num_gpu * gpu_memory_gb - 2 * model_params_billion) / kv_cache_size
+        return result if result >= 0 else 0
+
+    def calc_prefill_time_per_token(num_gpu, model_params_billion, gpu_fp16_tflops):
+        result = (2 * model_params_billion / num_gpu) / gpu_fp16_tflops
+        return result if result >= 0 else "OOM"
+
+    def calc_tpot(num_gpu, model_params_billion, memory_bandwidth_gbps):
+        result = (2 * model_params_billion / num_gpu) / memory_bandwidth_gbps * 1000
+        return result if result >= 0 else "OOM"
+
+    def calc_e2e_latency(prefill_time_per_token, tpot, prompt_size, response_size):
+        return (prompt_size * prefill_time_per_token + response_size * tpot) / 1000
+
+    for model in model_specs:
+        for gpu in gpu_specs:
+            kv_cache_size_per_token = calc_kv_cache_size_per_token(model["n_layers"], model["d_model"])
+            context_window = prompt_size + response_size
+            memory_footprint = calc_memory_footprint(model, n_concurrent_request, context_window)
+
+            available_memory = num_gpu * gpu["memory_gb"]
+            if memory_footprint > available_memory:
+                print(f"\n!!!! Warning {model['name']}: OOM for your input={prompt_size} and output={response_size} for {num_gpu}x {gpu['name']}")
+                kv_cache_tokens = calc_kv_cache_tokens(num_gpu, gpu["memory_gb"], model["params_billion"], kv_cache_size_per_token)
+                max_n_concurrent_req = int(kv_cache_tokens // context_window)
+                print(f"Max number of concurrent requests that can be set for this use case: {max_n_concurrent_req}, ignore the rows in the second table which contains {gpu['name']}")
+                # exit(1)
 
     print(f"\n******************** Estimate LLM Memory Footprint ********************")
     memory_footprint_table = []
     for model_spec in model_specs:
         kv_cache_size_per_token = calc_kv_cache_size_per_token(model_spec["n_layers"], model_spec["d_model"])
-        memory_footprint = calc_memory_footprint(model_spec, n_concurrent_request, avg_context_window)
+        context_window = prompt_size + response_size
+        memory_footprint = calc_memory_footprint(model_spec, n_concurrent_request, context_window)
         memory_footprint_table.append([model_spec['name'], f"{kv_cache_size_per_token:.6f} GiB/token", f"{memory_footprint:.2f} GB"])
     print(tabulate(memory_footprint_table, headers=['Model', 'KV Cache Size per Token', 'Memory Footprint'], tablefmt='orgtbl'))
-
-    def calc_kv_cache_tokens(num_gpu, gpu_memory_gb, model_params_billion, kv_cache_size):
-        result = (num_gpu * gpu_memory_gb - 2 * model_params_billion) / kv_cache_size
-        return result if result >= 0 else "OOM"
-
-    def calc_prefill_time_per_token(num_gpu, model_params_billion, fp16_tflops):
-        result = (2 * model_params_billion / num_gpu) / fp16_tflops
-        return result if result >= 0 else "OOM"
-
-    def calc_generation_time_per_token(num_gpu, model_params_billion, memory_bandwidth_gbps):
-        result = (2 * model_params_billion / num_gpu) / memory_bandwidth_gbps * 1000
-        return result if result >= 0 else "OOM"
-
-    def calc_estimated_response_time(prefill_time, generation_time, prompt_size, response_size):
-        if isinstance(prefill_time, str) or isinstance(generation_time, str):  # Check if any are "NA"
-            return "OOM"
-        return (prompt_size * prefill_time + response_size * generation_time) / 1000  # convert ms to seconds
 
     print(f"\n******************** Estimate LLM Capacity and Latency ******************** ")
     capacity_latency_table = []
     for model in model_specs:
-        # print(f"Model: {model['name']} ({model['params_billion']}B parameters)")
         kv_cache_size = calc_kv_cache_size_per_token(model['n_layers'], model['d_model'])
         for gpu in gpu_specs:
             kv_cache_tokens = calc_kv_cache_tokens(num_gpu, gpu['memory_gb'], model['params_billion'], kv_cache_size)
             prefill_time_per_token = calc_prefill_time_per_token(num_gpu, model['params_billion'], gpu['fp16_tflops'])
-            generation_time_per_token = calc_generation_time_per_token(num_gpu, model['params_billion'], gpu['memory_bandwidth_gbps'])
-            estimated_response_time = calc_estimated_response_time(prefill_time_per_token, generation_time_per_token, prompt_size, response_size)
-            capacity_latency_table.append([model['name'], gpu['name'], f"{kv_cache_tokens}", f"{prefill_time_per_token:.3f} ms", f"{generation_time_per_token:.3f} ms", f"{estimated_response_time:.1f} s"])
-    print(tabulate(capacity_latency_table, headers=['Model', 'GPU', 'KV Cache Tokens', 'Prefill Time', 'Generation Time', 'Estimated Response Time'], tablefmt='orgtbl'))
+            tpot = calc_tpot(num_gpu, model['params_billion'], gpu['memory_bandwidth_gbps'])
+            if isinstance(prefill_time_per_token, str) or isinstance(tpot, str):
+                ttft = "OOM"
+                e2e_latency = "OOM"
+                throughput = "OOM"
+            else:
+                ttft = prefill_time_per_token + tpot / 1000
+                e2e_latency = calc_e2e_latency(prefill_time_per_token, tpot, prompt_size, response_size)
+                throughput = response_size / e2e_latency if e2e_latency > 0 else "OOM"
+
+            capacity_latency_table.append([
+                model['name'], gpu['name'], f"{int(kv_cache_tokens)}", f"{prefill_time_per_token:.3f} ms",
+                f"{tpot:.3f} ms", f"{ttft:.3f} s", f"{e2e_latency:.1f} s", f"{throughput:.2f} tokens/sec"
+            ])
+    print(tabulate(capacity_latency_table, headers=['Model', 'GPU', 'Max # KV Cache Tokens', 'Prefill Time', 'TPOT (ms)', 'TTFT', 'E2E Latency', 'Output Tokens Throughput'], tablefmt='orgtbl'))
 
 if __name__ == '__main__':
     main()
