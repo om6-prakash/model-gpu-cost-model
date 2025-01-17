@@ -19,30 +19,31 @@ def main():
     print(f" n_concurrent_request = {n_concurrent_request}")
 
     gpu_specs = [
-        # {"name": "A10", "fp16_tflops": 125, "memory_gb": 24, "memory_bandwidth_gbps": 600},
-        # {"name": "A30", "fp16_tflops": 330, "memory_gb": 24, "memory_bandwidth_gbps": 933},
-        # {"name": "L40", "fp16_tflops": 181, "memory_gb": 48, "memory_bandwidth_gbps": 864},
-        # {"name": "L40s", "fp16_tflops": 362, "memory_gb": 48, "memory_bandwidth_gbps": 864},
-        # {"name": "A100 40 GB", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
-        # {"name": "A100 40 GB SXM", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
-        # {"name": "A100 80 GB PCIe", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 1935},
-        # {"name": "A100 80 GB SXM", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 2039},
+        {"name": "A10", "fp16_tflops": 125, "memory_gb": 24, "memory_bandwidth_gbps": 600},
+        {"name": "A30", "fp16_tflops": 330, "memory_gb": 24, "memory_bandwidth_gbps": 933},
+        {"name": "L40", "fp16_tflops": 181, "memory_gb": 48, "memory_bandwidth_gbps": 864},
+        {"name": "L40s", "fp16_tflops": 362, "memory_gb": 48, "memory_bandwidth_gbps": 864},
+        {"name": "A100 40 GB", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
+        {"name": "A100 40 GB SXM", "fp16_tflops": 312, "memory_gb": 40, "memory_bandwidth_gbps": 1555},
+        {"name": "A100 80 GB PCIe", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 1935},
+        {"name": "A100 80 GB SXM", "fp16_tflops": 312, "memory_gb": 80, "memory_bandwidth_gbps": 2039},
         {"name": "H100 PCIe", "fp16_tflops": 756.5, "memory_gb": 80, "memory_bandwidth_gbps": 2000},
         {"name": "H100 SXM", "fp16_tflops": 989.5, "memory_gb": 80, "memory_bandwidth_gbps": 3350},
         {"name": "H100 NVL", "fp16_tflops": 835.5, "memory_gb": 94, "memory_bandwidth_gbps": 3900},
         {"name": "H200 SXM", "fp16_tflops": 989.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800},
-        {"name": "H200 NVL", "fp16_tflops": 835.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800}
+        {"name": "H200 NVL", "fp16_tflops": 835.5, "memory_gb": 141, "memory_bandwidth_gbps": 4800},
+        {"name": "MI300X", "fp16_tflops": 1307, "memory_gb": 192, "memory_bandwidth_gbps": 5300}
     ]
 
     model_specs = [
-        # {"name": "Llama-3-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
-        # {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
-        # {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
-        {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128}
-        # {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
-        # {"name": "Falcon-7B", "params_billion": 7, "d_model": 4544, "n_heads": 71, "n_layers": 32, "max_context_window": 2048, "d_head": 64},
-        # {"name": "Falcon-40B", "params_billion": 40, "d_model": 8192, "n_heads": 128, "n_layers": 60, "max_context_window": 2048, "d_head": 64},
-        # {"name": "Falcon-180B", "params_billion": 180, "d_model": 14848, "n_heads": 232, "n_layers": 80, "max_context_window": 2048, "d_head": 64}
+        {"name": "Llama-3-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
+        {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
+        {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
+        {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128},
+        {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
+        {"name": "Falcon-7B", "params_billion": 7, "d_model": 4544, "n_heads": 71, "n_layers": 32, "max_context_window": 2048, "d_head": 64},
+        {"name": "Falcon-40B", "params_billion": 40, "d_model": 8192, "n_heads": 128, "n_layers": 60, "max_context_window": 2048, "d_head": 64},
+        {"name": "Falcon-180B", "params_billion": 180, "d_model": 14848, "n_heads": 232, "n_layers": 80, "max_context_window": 2048, "d_head": 64}
         # Add or comment out model specifications as needed
     ]
 
