@@ -1,5 +1,31 @@
 import argparse
+import os
+import csv
 from tabulate import tabulate
+
+def read_tsv_file(file_path):
+    """Read data from a TSV file and return a list of dictionaries."""
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    with open(file_path, 'r') as file:
+        reader = csv.DictReader(file, delimiter='\t')
+        data = []
+        for row in reader:
+            # Convert string values to appropriate types
+            processed_row = {}
+            for key, value in row.items():
+                if value == "None" or value == "":
+                    processed_row[key] = None
+                elif key in ["name", "connectivity", "architecture"]:
+                    processed_row[key] = value
+                else:
+                    try:
+                        processed_row[key] = float(value)
+                    except ValueError:
+                        processed_row[key] = value
+            data.append(processed_row)
+    return data
 
 def main():
     parser = argparse.ArgumentParser(description='GPU Performance Calculator for LLMs')
@@ -7,8 +33,13 @@ def main():
     parser.add_argument('-p', '--prompt_sz', type=int, default=4096, help='Prompt size in tokens')
     parser.add_argument('-r', '--response_sz', type=int, default=256, help='Response size in tokens')
     parser.add_argument('-c', '--n_concurrent_req', type=int, default=10, help='Number of concurrent requests')
-    parser.add_argument('--precision', type=str, default='fp16', choices=['int8', 'fp8', 'fp16', 'bf16', 'tf32', 'fp32', 'fp64'], 
+    parser.add_argument('--precision', type=str, default='fp16', 
+                       choices=['int8', 'fp8', 'fp16', 'bf16', 'tf32', 'fp32', 'fp64'], 
                        help='Precision level to use for calculations')
+    parser.add_argument('--gpu_file', type=str, default='data/gpu_specs.tsv', 
+                       help='Path to the TSV file containing GPU specifications')
+    parser.add_argument('--model_file', type=str, default='data/model_specs.tsv', 
+                       help='Path to the TSV file containing model specifications')
 
     args = parser.parse_args()
 
@@ -17,70 +48,23 @@ def main():
     response_size = args.response_sz
     n_concurrent_request = args.n_concurrent_req
     precision = args.precision
+    gpu_file = args.gpu_file
+    model_file = args.model_file
 
     print(f" num_gpu = {num_gpu}, prompt_size = {prompt_size} tokens, response_size = {response_size} tokens")
     print(f" n_concurrent_request = {n_concurrent_request}, precision = {precision}")
+    print(f" GPU specs file: {gpu_file}, Model specs file: {model_file}")
 
-    gpu_specs = [
-        # {"name":"A10","memory_gb":24,"memory_bandwidth_gbps":600,"connectivity":"PCIe","int8_tops":250,"fp8_tflops":None,"fp16_tflops":125,"bf16_tflops":125,"tf32_tflops":62.5,"fp32_tflops":31.2,"fp64_tflops":1.2},
-        # {"name":"A30","memory_gb":24,"memory_bandwidth_gbps":933,"connectivity":"PCIe","int8_tops":661,"fp8_tflops":None,"fp16_tflops":330,"bf16_tflops":330,"tf32_tflops":165,"fp32_tflops":82.5,"fp64_tflops":5.2},
-        # {"name":"L40","memory_gb":48,"memory_bandwidth_gbps":864,"connectivity":"PCIe","int8_tops":362,"fp8_tflops":None,"fp16_tflops":181,"bf16_tflops":181,"tf32_tflops":90.5,"fp32_tflops":90.5,"fp64_tflops":2.8},
-        # {"name":"L40s","memory_gb":48,"memory_bandwidth_gbps":864,"connectivity":"PCIe","int8_tops":724,"fp8_tflops":None,"fp16_tflops":362,"bf16_tflops":362,"tf32_tflops":181,"fp32_tflops":181,"fp64_tflops":5.6},
-        # {"name":"A100 40 GB","memory_gb":40,"memory_bandwidth_gbps":1555,"connectivity":"PCIe","int8_tops":624,"fp8_tflops":None,"fp16_tflops":312,"bf16_tflops":312,"tf32_tflops":156,"fp32_tflops":19.5,"fp64_tflops":9.7},
-        {"name":"A100 40 GB SXM","memory_gb":40,"memory_bandwidth_gbps":1555,"connectivity":"SXM","int8_tops":624,"fp8_tflops":None,"fp16_tflops":312,"bf16_tflops":312,"tf32_tflops":156,"fp32_tflops":19.5,"fp64_tflops":9.7},
-        {"name":"A100 80 GB PCIe","memory_gb":80,"memory_bandwidth_gbps":1935,"connectivity":"PCIe","int8_tops":624,"fp8_tflops":None,"fp16_tflops":312,"bf16_tflops":312,"tf32_tflops":156,"fp32_tflops":19.5,"fp64_tflops":9.7},
-        {"name":"A100 80 GB SXM","memory_gb":80,"memory_bandwidth_gbps":2039,"connectivity":"SXM","int8_tops":624,"fp8_tflops":None,"fp16_tflops":312,"bf16_tflops":312,"tf32_tflops":156,"fp32_tflops":19.5,"fp64_tflops":9.7},
-        {"name":"H100 PCIe","memory_gb":80,"memory_bandwidth_gbps":2000,"connectivity":"PCIe","int8_tops":1513,"fp8_tflops":3026,"fp16_tflops":756.5,"bf16_tflops":756.5,"tf32_tflops":378.2,"fp32_tflops":51,"fp64_tflops":26},
-        {"name":"H100 SXM","memory_gb":80,"memory_bandwidth_gbps":3350,"connectivity":"SXM","int8_tops":1979,"fp8_tflops":3958,"fp16_tflops":989.5,"bf16_tflops":989.5,"tf32_tflops":494.7,"fp32_tflops":67,"fp64_tflops":33.5},
-        {"name":"H100 NVL","memory_gb":94,"memory_bandwidth_gbps":3900,"connectivity":"NVL","int8_tops":1671,"fp8_tflops":3342,"fp16_tflops":835.5,"bf16_tflops":835.5,"tf32_tflops":417.7,"fp32_tflops":56.5,"fp64_tflops":28.2},
-        {"name":"H200 SXM","memory_gb":141,"memory_bandwidth_gbps":4800,"connectivity":"SXM","int8_tops":1979,"fp8_tflops":3958,"fp16_tflops":989.5,"bf16_tflops":989.5,"tf32_tflops":494.7,"fp32_tflops":67,"fp64_tflops":33.5},
-        {"name":"H200 NVL","memory_gb":141,"memory_bandwidth_gbps":4800,"connectivity":"NVL","int8_tops":1671,"fp8_tflops":3342,"fp16_tflops":835.5,"bf16_tflops":835.5,"tf32_tflops":417.7,"fp32_tflops":56.5,"fp64_tflops":28.2},
-        {"name":"B100 PCIe","memory_gb":96,"memory_bandwidth_gbps":3078,"connectivity":"PCIe","int8_tops":2220,"fp8_tflops":4440,"fp16_tflops":1110,"bf16_tflops":1110,"tf32_tflops":555,"fp32_tflops":74,"fp64_tflops":37},
-        {"name":"B100 SXM","memory_gb":96,"memory_bandwidth_gbps":3078,"connectivity":"SXM","int8_tops":2664,"fp8_tflops":5328,"fp16_tflops":1332,"bf16_tflops":1332,"tf32_tflops":666,"fp32_tflops":89,"fp64_tflops":44.5},
-        {"name":"B200 PCIe","memory_gb":192,"memory_bandwidth_gbps":5376,"connectivity":"PCIe","int8_tops":2940,"fp8_tflops":5880,"fp16_tflops":1470,"bf16_tflops":1470,"tf32_tflops":735,"fp32_tflops":98,"fp64_tflops":49},
-        {"name":"B200 SXM","memory_gb":192,"memory_bandwidth_gbps":5376,"connectivity":"SXM","int8_tops":3540,"fp8_tflops":7080,"fp16_tflops":1770,"bf16_tflops":1770,"tf32_tflops":885,"fp32_tflops":118,"fp64_tflops":59},
-        {"name":"GH100 (Grace Hopper)","memory_gb":80,"memory_bandwidth_gbps":3350,"connectivity":"SXM","architecture":"Grace Hopper","grace_memory_gb":480,"int8_tops":1979,"fp8_tflops":3958,"fp16_tflops":989.5,"bf16_tflops":989.5,"tf32_tflops":494.7,"fp32_tflops":67,"fp64_tflops":33.5},
-        {"name":"GH200 (Grace Hopper)","memory_gb":141,"memory_bandwidth_gbps":4800,"connectivity":"NVL","architecture":"Grace Hopper","grace_memory_gb":480,"int8_tops":1979,"fp8_tflops":3958,"fp16_tflops":989.5,"bf16_tflops":989.5,"tf32_tflops":494.7,"fp32_tflops":67,"fp64_tflops":33.5},
-        {"name":"GB100 (Grace Blackwell)","memory_gb":96,"memory_bandwidth_gbps":3078,"connectivity":"SXM","architecture":"Grace Blackwell","grace_memory_gb":480,"int8_tops":2664,"fp8_tflops":5328,"fp16_tflops":1332,"bf16_tflops":1332,"tf32_tflops":666,"fp32_tflops":89,"fp64_tflops":44.5},
-        {"name":"GB200 (Grace Blackwell)","memory_gb":192,"memory_bandwidth_gbps":5376,"connectivity":"NVL","architecture":"Grace Blackwell","grace_memory_gb":576,"int8_tops":3540,"fp8_tflops":7080,"fp16_tflops":1770,"bf16_tflops":1770,"tf32_tflops":885,"fp32_tflops":118,"fp64_tflops":59},
-    ]
-
-    model_specs = [
-        # Original models
-        # {"name": "Llama-3-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
-        # {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128},
-        # {"name": "Llama-3.1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
-        # {"name": "Llama-3.1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128},
-        # {"name": "Mistral-7B-v0.3", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
-        # {"name": "Falcon-7B", "params_billion": 7, "d_model": 4544, "n_heads": 71, "n_layers": 32, "max_context_window": 2048, "d_head": 64},
-        # {"name": "Falcon-40B", "params_billion": 40, "d_model": 8192, "n_heads": 128, "n_layers": 60, "max_context_window": 2048, "d_head": 64},
-        # {"name": "Falcon-180B", "params_billion": 180, "d_model": 14848, "n_heads": 232, "n_layers": 80, "max_context_window": 2048, "d_head": 64},
-        
-        # Additional Llama 3.1 models
-        # {"name": "Llama-3.1-405B", "params_billion": 405, "d_model": 16384, "n_heads": 128, "n_layers": 120, "max_context_window": 131072, "d_head": 128},
-        
-        # Microsoft Phi models
-        # {"name": "Phi-2", "params_billion": 2.7, "d_model": 2560, "n_heads": 32, "n_layers": 32, "max_context_window": 2048, "d_head": 80},
-        # {"name": "Phi-3-mini", "params_billion": 3.8, "d_model": 3072, "n_heads": 32, "n_layers": 24, "max_context_window": 8192, "d_head": 96},
-        # {"name": "Phi-3-small", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
-        # {"name": "Phi-3-medium", "params_billion": 14, "d_model": 5120, "n_heads": 40, "n_layers": 48, "max_context_window": 8192, "d_head": 128},
-        # {"name": "Phi-3", "params_billion": 28, "d_model": 6144, "n_heads": 48, "n_layers": 58, "max_context_window": 8192, "d_head": 128},
-        
-        # # Qwen models
-        # {"name": "Qwen-7B", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
-        # {"name": "Qwen-14B", "params_billion": 14, "d_model": 5120, "n_heads": 40, "n_layers": 40, "max_context_window": 32768, "d_head": 128},
-        # {"name": "Qwen-72B", "params_billion": 72, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 32768, "d_head": 128},
-        # {"name": "Qwen-110B", "params_billion": 110, "d_model": 10240, "n_heads": 80, "n_layers": 80, "max_context_window": 32768, "d_head": 128},
-        # {"name": "Qwen2-7B", "params_billion": 7, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 131072, "d_head": 128},
-        # {"name": "Qwen2-72B", "params_billion": 72, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 131072, "d_head": 128},
-
-        # DeepSeek models
-        {"name": "DeepSeek-R1-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 32768, "d_head": 128},
-        {"name": "DeepSeek-R1-33B", "params_billion": 33, "d_model": 6144, "n_heads": 48, "n_layers": 48, "max_context_window": 32768, "d_head": 128},
-        {"name": "DeepSeek-R1-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 72, "max_context_window": 32768, "d_head": 128},
-        {"name": "DeepSeek-V2-236B", "params_billion": 236, "d_model": 12288, "n_heads": 96, "n_layers": 120, "max_context_window": 32768, "d_head": 128},
-        {"name": "DeepSeek-R1-671B", "params_billion": 671, "d_model": 16384, "n_heads": 128, "n_layers": 168, "max_context_window": 32768, "d_head": 128},
-    ]
+    try:
+        gpu_specs = read_tsv_file(gpu_file)
+        model_specs = read_tsv_file(model_file)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        print("Please make sure the TSV files exist at the specified paths.")
+        return
+    except Exception as e:
+        print(f"Error reading TSV files: {e}")
+        return
 
     BYTES_IN_GB = 1_073_741_824
 
@@ -248,5 +232,56 @@ def main():
                               'E2E Latency', 'Throughput'], 
                       tablefmt='orgtbl'))
 
+def generate_sample_tsv_files():
+    """Generate sample TSV files if they don't exist."""
+    # Sample GPU specs
+    gpu_specs = [
+        {"name":"A10","memory_gb":24,"memory_bandwidth_gbps":600,"connectivity":"PCIe","int8_tops":250,"fp8_tflops":None,"fp16_tflops":125,"bf16_tflops":125,"tf32_tflops":62.5,"fp32_tflops":31.2,"fp64_tflops":1.2},
+        {"name":"H100 PCIe","memory_gb":80,"memory_bandwidth_gbps":2000,"connectivity":"PCIe","int8_tops":1513,"fp8_tflops":3026,"fp16_tflops":756.5,"bf16_tflops":756.5,"tf32_tflops":378.2,"fp32_tflops":51,"fp64_tflops":26}
+    ]
+    
+    # Sample model specs
+    model_specs = [
+        {"name": "Llama-3-8B", "params_billion": 8, "d_model": 4096, "n_heads": 32, "n_layers": 32, "max_context_window": 8192, "d_head": 128},
+        {"name": "Llama-3-70B", "params_billion": 70, "d_model": 8192, "n_heads": 64, "n_layers": 80, "max_context_window": 8192, "d_head": 128}
+    ]
+    
+    # Generate GPU specs TSV
+    if not os.path.exists('gpu_specs.tsv'):
+        with open('gpu_specs.tsv', 'w', newline='') as file:
+            fieldnames = ["name", "memory_gb", "memory_bandwidth_gbps", "connectivity", "int8_tops", 
+                          "fp8_tflops", "fp16_tflops", "bf16_tflops", "tf32_tflops", "fp32_tflops", "fp64_tflops", 
+                          "architecture", "grace_memory_gb"]
+            
+            writer = csv.DictWriter(file, fieldnames=fieldnames, delimiter='\t')
+            writer.writeheader()
+            
+            for gpu in gpu_specs:
+                # Ensure all fields are present
+                for field in fieldnames:
+                    if field not in gpu:
+                        gpu[field] = None
+                writer.writerow(gpu)
+        
+        print("Sample GPU specs file 'gpu_specs.tsv' generated.")
+    
+    # Generate model specs TSV
+    if not os.path.exists('model_specs.tsv'):
+        with open('model_specs.tsv', 'w', newline='') as file:
+            fieldnames = ["name", "params_billion", "d_model", "n_heads", "n_layers", "max_context_window", "d_head"]
+            
+            writer = csv.DictWriter(file, fieldnames=fieldnames, delimiter='\t')
+            writer.writeheader()
+            
+            for model in model_specs:
+                writer.writerow(model)
+        
+        print("Sample model specs file 'model_specs.tsv' generated.")
+
 if __name__ == '__main__':
+    # Check if TSV files exist, if not, generate samples
+    if not os.path.exists('gpu_specs.tsv') or not os.path.exists('model_specs.tsv'):
+        print("TSV files not found. Generating sample files...")
+        generate_sample_tsv_files()
+    
     main()
